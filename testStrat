@@ -104,6 +104,7 @@ contract TESTINStrategyToken is ERC20("PCS-WBNB-LP(NRVxBNB)-CAKE", "UCBs-1"), Ow
     uint256 constant pid = 252;
     address constant rewardToken = 0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82;
     
+    uint constant MAX_UINT_VALUE = type(uint).max;
     
     uint256 public principalStaked;
     uint256 public reinvestIncentive = 100;
@@ -132,12 +133,12 @@ contract TESTINStrategyToken is ERC20("PCS-WBNB-LP(NRVxBNB)-CAKE", "UCBs-1"), Ow
         // rewardToken = IERC20(_rewardToken);//0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82---0x30bc36A80e391E29Fc88e736DA6752C26fc386EC
         //exchangeRouter = iExchangeRouter(_exchangeRouter);//0x10ED43C718714eb63d5aA57B78B54704E256024E---0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D
         
-        IERC20(baseToken).approve(address(exchangeRouter), uint(-1));
-        IERC20(token0).approve(address(exchangeRouter), uint(-1));
-        //IERC20(token1).approve(exchangeRouter, uint(-1)); token1 == basetoken
-        IERC20(lPToken).approve(address(rewardPool), uint(-1));
-        IERC20(rewardToken).approve(address(exchangeRouter), uint(-1));
-        IERC20(lPToken).approve(address(exchangeRouter), uint(-1));
+        IERC20(baseToken).approve(address(exchangeRouter), MAX_UINT_VALUE);
+        IERC20(token0).approve(address(exchangeRouter), MAX_UINT_VALUE);
+        //IERC20(token1).approve(exchangeRouter, MAX_UINT_VALUE); token1 == basetoken
+        IERC20(lPToken).approve(address(rewardPool), MAX_UINT_VALUE);
+        IERC20(rewardToken).approve(address(exchangeRouter), MAX_UINT_VALUE);
+        IERC20(lPToken).approve(address(exchangeRouter), MAX_UINT_VALUE);
         
     }
     
@@ -164,7 +165,7 @@ contract TESTINStrategyToken is ERC20("PCS-WBNB-LP(NRVxBNB)-CAKE", "UCBs-1"), Ow
     //vvv Only for testing vvv
     function customApprove(address tokenToApprove, address approveAccount) external onlyOwner{
         //require(tokenToApprove!=baseToken||tokenToApprove!=address(lPToken)||tokenToApprove!=address(rewardToken))
-        IERC20(tokenToApprove).approve(approveAccount, uint(-1));
+        IERC20(tokenToApprove).approve(approveAccount, MAX_UINT_VALUE);
     }
     
     function burn(address account, uint256 amount) internal {
