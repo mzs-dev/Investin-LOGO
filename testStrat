@@ -31,6 +31,12 @@ interface iFarm{
     function emergencyWithdraw(uint256 _pid) external;
 }
 
+interface iMasterChef{
+    function deposit(uint256 _pid, uint256 _amount) external;
+    function withdraw(uint256 _pid, uint256 _amount) external;
+    function pendingCake(uint256 _pid, address _user) external view returns (uint256);
+}
+
 interface iExchangeFactory {
     function getPair(address tokenA, address tokenB) external view returns (address pair);
     function allPairs(uint) external view returns (address pair);
@@ -86,14 +92,18 @@ interface iExchangePair is IERC20{
     function token1() external view returns (address);
 }
 // Investintoken with Governance.
-contract NitsevniXYZStrategyToken is ERC20("PCS-WBNB-LP(NRVxBNB)-CAKE", "UCBs-1"), Ownable, iFarmingStrategy {
+contract TESTINStrategyToken is ERC20("PCS-WBNB-LP(NRVxBNB)-CAKE", "UCBs-1"), Ownable, iFarmingStrategy {
     
-    iExchangePair public immutable lPToken; 
-    iFarm public immutable rewardPool;
-    uint256 public immutable pid;
+    address constant stableCoin = 0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56;
+    address public constant baseToken = 0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56;
+    iExchangeRouter constant exchangeRouter = iExchangeRouter(0x10ED43C718714eb63d5aA57B78B54704E256024E);
+    iExchangePair constant lPToken = iExchangePair(0x58F876857a02D6762E0101bb5C46A8c1ED44Dc16);
+    address constant token0 = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c;
+    address constant token1 = 0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56;
+    iMasterChef constant rewardPool = iMasterChef(0x73feaa1eE314F8c655E354234017bE2193C9E24E);
+    uint256 constant pid = 252;
+    address constant rewardToken = 0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82;
     
-    IERC20 public immutable rewardToken;
-    IERC20 public immutable baseToken;
     
     uint256 public principalStaked;
     uint256 public reinvestIncentive = 100;
@@ -102,34 +112,28 @@ contract NitsevniXYZStrategyToken is ERC20("PCS-WBNB-LP(NRVxBNB)-CAKE", "UCBs-1"
     
     address[] fundFactories;
     
-    address public constant investinVault = 0x064103ffD68f9F7410Cebd236Dc49a568CC5fde8;
-    address public constant stableCoin = 0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56;
-    iExchangeRouter public immutable exchangeRouter;
+    address constant investinVault = 0x064103ffD68f9F7410Cebd236Dc49a568CC5fde8;
+    
+    address[] 
+    
     
     bool public status = true;
     
-    constructor(address[] memory _fundFactories, address _baseToken, address _lPToken, address _rewardPool, uint256 _pid, address _rewardToken, address _exchangeRouter) public {
-        fundFactories = _fundFactories;//0xE8Ee74337d10CF49578F1B84113383ae3CB4570b
-        baseToken = IERC20(_baseToken);//0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c----0xd0A1E359811322d97991E03f863a0C30C2cF029C
-        lPToken = iExchangePair(_lPToken);//0xddE420cbB3794ebD8FFC3Ac69F9c78e5d1411870---0xe8dB89C9D3d5459cfEBEE8Ec7FAE07b6988EE46c
-        rewardPool = iFarm(_rewardPool);//0x73feaa1eE314F8c655E354234017bE2193C9E24E---0x23D6Be0079309a35c92CaB1D6Ebd286130ED4311
-        pid = _pid;
-        rewardToken = IERC20(_rewardToken);//0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82---0x30bc36A80e391E29Fc88e736DA6752C26fc386EC
-        exchangeRouter = iExchangeRouter(_exchangeRouter);//0x10ED43C718714eb63d5aA57B78B54704E256024E---0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D
+    constructor(address[] memory _fundFactories) public {
+        // fundFactories = _fundFactories;//0xE8Ee74337d10CF49578F1B84113383ae3CB4570b
+        // baseToken = IERC20(_baseToken);//0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c----0xd0A1E359811322d97991E03f863a0C30C2cF029C
+        // lPToken = iExchangePair(_lPToken);//0xddE420cbB3794ebD8FFC3Ac69F9c78e5d1411870---0xe8dB89C9D3d5459cfEBEE8Ec7FAE07b6988EE46c
+        // rewardPool = iFarm(_rewardPool);//0x73feaa1eE314F8c655E354234017bE2193C9E24E---0x23D6Be0079309a35c92CaB1D6Ebd286130ED4311
+        // pid = _pid;
+        // rewardToken = IERC20(_rewardToken);//0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82---0x30bc36A80e391E29Fc88e736DA6752C26fc386EC
+        //exchangeRouter = iExchangeRouter(_exchangeRouter);//0x10ED43C718714eb63d5aA57B78B54704E256024E---0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D
         
-        IERC20(_baseToken).approve(_exchangeRouter, uint(-1));
-        address _token = iExchangePair(_lPToken).token0();
-        
-        if(_token!=_baseToken){
-            IERC20(_token).approve(_exchangeRouter, uint(-1));
-        }
-        _token = iExchangePair(_lPToken).token1();
-        if(_token!=_baseToken){
-            IERC20(_token).approve(_exchangeRouter, uint(-1));
-        }
-        IERC20(_lPToken).approve(_rewardPool, uint(-1));
-        IERC20(_rewardToken).approve(_exchangeRouter, uint(-1));
-        IERC20(_lPToken).approve(_exchangeRouter, uint(-1));
+        IERC20(baseToken).approve(address(exchangeRouter), uint(-1));
+        IERC20(token0).approve(address(exchangeRouter), uint(-1));
+        //IERC20(token1).approve(exchangeRouter, uint(-1)); token1 == basetoken
+        IERC20(lPToken).approve(address(rewardPool), uint(-1));
+        IERC20(rewardToken).approve(address(exchangeRouter), uint(-1));
+        //IERC20(_lPToken).approve(_exchangeRouter, uint(-1));
         
     }
     
