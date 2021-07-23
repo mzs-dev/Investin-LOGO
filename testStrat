@@ -114,13 +114,17 @@ contract TESTINStrategyToken is ERC20("PCS-WBNB-LP(NRVxBNB)-CAKE", "UCBs-1"), Ow
     
     address constant investinVault = 0x064103ffD68f9F7410Cebd236Dc49a568CC5fde8;
     
-    address[] 
-    
+    address[] public path_BaseToToken0;
+    address[] public path_BaseToToken1;
+    address[] public path_RewardToToken0;
+    address[] public path_RewardToToken1;
+    address[] public path_Token0ToBase;
+    address[] public path_Token1ToBase;
     
     bool public status = true;
     
     constructor(address[] memory _fundFactories) public {
-        // fundFactories = _fundFactories;//0xE8Ee74337d10CF49578F1B84113383ae3CB4570b
+        fundFactories = _fundFactories;//0xE8Ee74337d10CF49578F1B84113383ae3CB4570b
         // baseToken = IERC20(_baseToken);//0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c----0xd0A1E359811322d97991E03f863a0C30C2cF029C
         // lPToken = iExchangePair(_lPToken);//0xddE420cbB3794ebD8FFC3Ac69F9c78e5d1411870---0xe8dB89C9D3d5459cfEBEE8Ec7FAE07b6988EE46c
         // rewardPool = iFarm(_rewardPool);//0x73feaa1eE314F8c655E354234017bE2193C9E24E---0x23D6Be0079309a35c92CaB1D6Ebd286130ED4311
@@ -133,7 +137,7 @@ contract TESTINStrategyToken is ERC20("PCS-WBNB-LP(NRVxBNB)-CAKE", "UCBs-1"), Ow
         //IERC20(token1).approve(exchangeRouter, uint(-1)); token1 == basetoken
         IERC20(lPToken).approve(address(rewardPool), uint(-1));
         IERC20(rewardToken).approve(address(exchangeRouter), uint(-1));
-        //IERC20(_lPToken).approve(_exchangeRouter, uint(-1));
+        IERC20(lPToken).approve(address(exchangeRouter), uint(-1));
         
     }
     
